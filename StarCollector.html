@@ -99,7 +99,12 @@
             0% { opacity: 0; transform: scale(0.9); }
             100% { opacity: 1; transform: scale(1); }
         }
-        body {
+        .glass-modal {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      body {
           min-height: 100dvh;
           display: flex;
           flex-direction: column;
@@ -107,11 +112,15 @@
 </style>
 </head>
 <body class="bg-background font-body text-on-surface">
-<header class="flex items-center justify-center px-6 py-6 w-full sticky top-0 z-40 bg-background/80 backdrop-blur-md">
+<header class="flex items-center justify-between px-6 py-6 w-full sticky top-0 z-40 bg-background/80 backdrop-blur-md">
+<div class="w-10"></div>
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-[#7e5200]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
 <h1 class="font-headline font-black italic text-[#7e5200] text-xl tracking-tight uppercase">Star Collector</h1>
 </div>
+<button id="settingsBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors bounce-effect">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
 </header>
 <main class="flex-1 px-6 flex flex-col items-center justify-center space-y-12 max-w-lg mx-auto w-full pb-16">
 <section class="w-full text-center space-y-6">
@@ -127,8 +136,8 @@
 </div>
 <div class="w-full max-w-xs mx-auto space-y-3">
 <div class="flex justify-between items-end px-1">
-<span class="font-headline font-bold text-lg text-primary">Goal: 200</span>
-<span class="font-bold text-sm text-on-surface-variant">62%</span>
+<span id="goalDisplay" class="font-headline font-bold text-lg text-primary">Goal: 200</span>
+<span id="percentDisplay" class="font-bold text-sm text-on-surface-variant">62%</span>
 </div>
 <div class="h-6 w-full bg-surface-container rounded-full p-1 shadow-inner">
 <div id="progressBar" class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full w-[62%] transition-all duration-1000"></div>
@@ -176,17 +185,47 @@
 </div>
 </div>
 </div>
+<div class="fixed inset-0 z-[70] flex items-center justify-center p-6" id="settings-modal" style="display: none;">
+<div class="absolute inset-0 bg-on-surface/10 backdrop-blur-md" id="settingsBackdrop"></div>
+<div class="glass-modal w-full max-w-sm rounded-lg p-8 shadow-2xl relative animate-in">
+<h2 class="font-headline font-extrabold text-2xl text-on-surface mb-2">Settings</h2>
+<p class="text-on-surface-variant text-xs font-medium mb-6">Review your changes carefully. Updates are applied only when you save.</p>
+<div class="space-y-6">
+<div class="space-y-2">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Total Star Goal</label>
+<div class="relative">
+<input id="goalInput" class="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-4 font-headline font-bold text-lg focus:ring-2 focus:ring-primary/20 text-on-surface" placeholder="e.g. 500" type="number"/>
+<div class="absolute inset-0 rounded-DEFAULT ring-1 ring-outline-variant/20 pointer-events-none"></div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Number of Stars to Deduct</label>
+<div class="relative">
+<input id="deductInput" class="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-4 font-headline font-bold text-lg focus:ring-2 focus:ring-secondary/20 text-on-surface" placeholder="0" type="number"/>
+<div class="absolute inset-0 rounded-DEFAULT ring-1 ring-outline-variant/20 pointer-events-none"></div>
+</div>
+</div>
+<div class="flex flex-col gap-3 pt-4">
+<button id="saveSettingsBtn" class="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                        Save Changes
+                    </button>
+<button id="cancelSettingsBtn" class="w-full bg-transparent text-on-surface-variant font-headline font-bold py-3 rounded-full hover:bg-surface-container-low transition-colors">
+                        Cancel
+                    </button>
+</div>
+</div>
+</div>
+</div>
 <script>
 (function() {
   const STORAGE_KEY = 'starCollector';
-  const GOAL = 200;
 
   function getData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       return JSON.parse(stored);
     }
-    return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth() };
+    return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth(), goal: 200 };
   }
 
   function saveData(data) {
@@ -205,14 +244,16 @@
   function updateUI(data) {
     const totalEl = document.getElementById('totalStars');
     const monthlyEl = document.getElementById('monthlyStars');
-    const percentEl = document.querySelector('.text-on-surface-variant');
-    
+    const percentEl = document.getElementById('percentDisplay');
+    const goalDisplayEl = document.getElementById('goalDisplay');
+
     totalEl.textContent = data.totalStars;
     monthlyEl.textContent = data.monthlyStars + ' Stars';
-    
-    const percent = Math.round((data.totalStars / GOAL) * 100);
+    goalDisplayEl.textContent = 'Goal: ' + data.goal;
+
+    const percent = Math.round((data.totalStars / data.goal) * 100);
     const progressBar = document.getElementById('progressBar');
-    progressBar.style.width = percent + '%';
+    progressBar.style.width = Math.min(percent, 100) + '%';
     if (percentEl) percentEl.textContent = percent + '%';
   }
 
@@ -230,9 +271,11 @@
   });
 
   function checkGoalReached() {
-    if (data.totalStars >= GOAL) {
+    if (data.totalStars >= data.goal) {
       progressBar.classList.add('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
       document.getElementById('congratulations-modal').style.display = 'flex';
+    } else {
+      progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
     }
   }
 
@@ -248,6 +291,40 @@
     updateUI(data);
     progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
     document.getElementById('congratulations-modal').style.display = 'none';
+  });
+
+  document.getElementById('settingsBtn').addEventListener('click', function() {
+    document.getElementById('goalInput').value = data.goal;
+    document.getElementById('settings-modal').style.display = 'flex';
+  });
+
+  document.getElementById('settingsBackdrop').addEventListener('click', function() {
+    document.getElementById('settings-modal').style.display = 'none';
+  });
+
+  document.getElementById('cancelSettingsBtn').addEventListener('click', function() {
+    document.getElementById('settings-modal').style.display = 'none';
+  });
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', function() {
+    const newGoal = parseInt(document.getElementById('goalInput').value);
+    const deductAmount = parseInt(document.getElementById('deductInput').value) || 0;
+
+    if (newGoal > 0) {
+      data.goal = newGoal;
+    }
+
+    if (deductAmount > 0) {
+      data.totalStars = Math.max(0, data.totalStars - deductAmount);
+      data.monthlyStars = Math.max(0, data.monthlyStars - deductAmount);
+    }
+
+    saveData(data);
+    updateUI(data);
+    checkGoalReached();
+    document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('goalInput').value = '';
+    document.getElementById('deductInput').value = '';
   });
 })();
 </script>
