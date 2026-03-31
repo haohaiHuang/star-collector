@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Star Collector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#392e00",
+              "secondary": "#9b3f00",
+              "surface-container-high": "#fae18c",
+              "tertiary": "#006b1b",
+              "surface": "#fff6e1",
+              "secondary-fixed": "#ffc5aa",
+              "error-container": "#f95630",
+              "inverse-primary": "#feaa00",
+              "outline": "#86763b",
+              "on-error": "#ffefec",
+              "tertiary-container": "#91f78e",
+              "secondary-fixed-dim": "#ffb28c",
+              "on-tertiary": "#d1ffc8",
+              "on-background": "#392e00",
+              "on-tertiary-fixed": "#00480f",
+              "on-primary-fixed": "#331f00",
+              "secondary-dim": "#883700",
+              "primary-fixed-dim": "#ec9e00",
+              "on-primary-fixed-variant": "#5b3b00",
+              "surface-bright": "#fff6e1",
+              "surface-container-low": "#fff0c4",
+              "on-tertiary-container": "#005e17",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#ffc5aa",
+              "surface-container": "#ffe796",
+              "tertiary-fixed": "#91f78e",
+              "inverse-surface": "#130e00",
+              "tertiary-dim": "#005d16",
+              "inverse-on-surface": "#ae9c5e",
+              "background": "#fff6e1",
+              "surface-tint": "#7e5200",
+              "on-error-container": "#520c00",
+              "on-secondary-fixed": "#5c2300",
+              "on-primary-container": "#503300",
+              "on-surface-variant": "#695b23",
+              "surface-variant": "#f5dc81",
+              "tertiary-fixed-dim": "#83e881",
+              "on-secondary": "#fff0ea",
+              "primary-container": "#feaa00",
+              "on-primary": "#fff0e2",
+              "on-secondary-container": "#7b3100",
+              "surface-dim": "#edd374",
+              "primary-dim": "#6e4800",
+              "error": "#b02500",
+              "primary": "#7e5200",
+              "error-dim": "#b92902",
+              "primary-fixed": "#feaa00",
+              "surface-container-highest": "#f5dc81",
+              "outline-variant": "#bfac6c",
+              "on-secondary-fixed-variant": "#893700",
+              "on-tertiary-fixed-variant": "#00691a"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .bounce-effect:active { transform: scale(0.95); }
+        .star-glow {
+            filter: drop-shadow(0 0 12px rgba(254, 170, 0, 0.4));
+        }
+        .confetti-slow {
+            animation: confetti-fall 4s linear infinite;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .animate-in {
+            animation: fade-in-zoom-in 0.3s ease-out;
+        }
+        @keyframes fade-in-zoom-in {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        body {
+          min-height: 100dvh;
+          display: flex;
+          flex-direction: column;
+        }
+</style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<header class="flex items-center justify-center px-6 py-6 w-full sticky top-0 z-40 bg-background/80 backdrop-blur-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#7e5200]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h1 class="font-headline font-black italic text-[#7e5200] text-xl tracking-tight uppercase">Star Collector</h1>
+</div>
+</header>
+<main class="flex-1 px-6 flex flex-col items-center justify-center -mt-16 space-y-12 max-w-lg mx-auto w-full">
+<section class="w-full text-center space-y-6">
+<div class="relative inline-block">
+<div class="absolute inset-0 bg-primary-container/30 blur-3xl rounded-full scale-150"></div>
+<div class="relative">
+<p class="font-headline font-extrabold text-on-surface-variant/60 tracking-widest uppercase text-sm mb-2">Total Collection</p>
+<div class="flex items-center justify-center gap-4">
+<span class="material-symbols-outlined text-5xl text-primary star-glow" style="font-variation-settings: 'FILL' 1;">stars</span>
+<h2 id="totalStars" class="font-headline font-black text-8xl text-on-surface tracking-tighter">124</h2>
+</div>
+</div>
+</div>
+<div class="w-full max-w-xs mx-auto space-y-3">
+<div class="flex justify-between items-end px-1">
+<span class="font-headline font-bold text-lg text-primary">Goal: 200</span>
+<span class="font-bold text-sm text-on-surface-variant">62%</span>
+</div>
+<div class="h-6 w-full bg-surface-container rounded-full p-1 shadow-inner">
+<div id="progressBar" class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full w-[62%] transition-all duration-1000"></div>
+</div>
+</div>
+</section>
+<section class="flex flex-col items-center gap-4">
+<button id="addStarBtn" class="group bg-gradient-to-br from-primary to-primary-container w-32 h-32 rounded-full flex items-center justify-center shadow-[0_12px_40px_-8px_rgba(126,82,0,0.4)] hover:scale-105 active:scale-95 transition-all duration-300">
+<span class="material-symbols-outlined text-on-primary text-6xl font-bold">add</span>
+</button>
+<p class="text-on-surface-variant font-bold text-lg">Tap to add a star</p>
+</section>
+<section class="bg-surface-container-low rounded-2xl px-8 py-4 flex flex-col items-center border border-white/40 shadow-sm">
+<p class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-1">This Month</p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span id="monthlyStars" class="font-headline font-bold text-2xl text-on-surface">42 Stars</span>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full z-50 flex items-center px-4 pb-10 pt-4 bg-white/70 backdrop-blur-xl shadow-[0_-8px_32px_-4px_rgba(57,46,0,0.08)] rounded-t-[3rem] justify-center">
+<a class="flex flex-col items-center justify-center bg-[#ffe796] text-[#392e00] rounded-full px-8 py-2 transition-all bounce-effect" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest mt-0.5">Star</span>
+</a>
+</nav>
+<div class="fixed inset-0 z-[60] flex items-center justify-center px-6" id="congratulations-modal" style="display: none;">
+<div class="absolute inset-0 bg-on-background/40 backdrop-blur-sm"></div>
+<div class="relative bg-surface p-8 rounded-lg shadow-2xl border border-surface-container-high w-full max-w-sm text-center animate-in">
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-lg border-4 border-surface">
+<span class="material-symbols-outlined text-5xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div class="mt-8 space-y-4">
+<h3 class="font-headline font-black text-3xl text-on-surface tracking-tight">Congratulations!</h3>
+<div class="flex justify-center gap-1">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary scale-125" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="text-on-surface-variant font-medium leading-relaxed">
+                    You've reached your amazing goal of <span class="font-bold text-primary">200 stars</span>! Your consistency is truly shining bright.
+                </p>
+</div>
+<div class="mt-8 space-y-3">
+<button id="resetBtn" class="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dim transition-colors bounce-effect">
+                    Reset and Start Over
+                </button>
+<button id="closeModalBtn" class="w-full bg-surface-container text-on-surface-variant font-headline font-bold py-3 rounded-xl hover:bg-surface-container-high transition-colors">
+                    Close
+                </button>
+</div>
+</div>
+</div>
+<script>
+(function() {
+  const STORAGE_KEY = 'starCollector';
+  const GOAL = 200;
+
+  function getData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth() };
+  }
+
+  function saveData(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function checkMonthlyReset(data) {
+    const currentMonth = new Date().getMonth();
+    if (data.lastMonth !== currentMonth) {
+      data.monthlyStars = 0;
+      data.lastMonth = currentMonth;
+    }
+    return data;
+  }
+
+  function updateUI(data) {
+    const totalEl = document.getElementById('totalStars');
+    const monthlyEl = document.getElementById('monthlyStars');
+    const percentEl = document.querySelector('.text-on-surface-variant');
+    
+    totalEl.textContent = data.totalStars;
+    monthlyEl.textContent = data.monthlyStars + ' Stars';
+    
+    const percent = Math.round((data.totalStars / GOAL) * 100);
+    const progressBar = document.getElementById('progressBar');
+    progressBar.style.width = percent + '%';
+    if (percentEl) percentEl.textContent = percent + '%';
+  }
+
+  let data = getData();
+  data = checkMonthlyReset(data);
+  saveData(data);
+  updateUI(data);
+
+  document.getElementById('addStarBtn').addEventListener('click', function() {
+    data.totalStars++;
+    data.monthlyStars++;
+    saveData(data);
+    updateUI(data);
+    checkGoalReached();
+  });
+
+  function checkGoalReached() {
+    if (data.totalStars >= GOAL) {
+      progressBar.classList.add('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+      document.getElementById('congratulations-modal').style.display = 'flex';
+    }
+  }
+
+  document.getElementById('closeModalBtn').addEventListener('click', function() {
+    document.getElementById('congratulations-modal').style.display = 'none';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    data.totalStars = 0;
+    data.monthlyStars = 0;
+    data.lastMonth = new Date().getMonth();
+    saveData(data);
+    updateUI(data);
+    progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+    document.getElementById('congratulations-modal').style.display = 'none';
+  });
+})();
+</script>
+</body>
+</html>
