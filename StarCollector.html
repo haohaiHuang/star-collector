@@ -7,7 +7,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@2.25.6/dist/cloudbase.full.js"></script>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.1/cloudbase.full.js"></script>
 <script>
       tailwind.config = {
         darkMode: "class",
@@ -486,11 +486,9 @@ Cancel
   try {
     // 初始化 CloudBase 应用
     app = cloudbase.init({
-      env: "hhhbewater-6glrnfrl9ace5ca2"
+      env: "hhhbewater-6glrnfrl9ace5ca2",
+      publishable: "请替换为您的 Publishable Key"
     });
-    
-    // 使用临时访问令牌
-    app.auth().setAccessToken("eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLWIwY2M2M2Q4MTQ5OCJ9.eyJhdWQiOiJoaGhiZXdhdGVyLTZnbHJuZnJsOWFjZTVjYTIiLCJleHAiOjI1MzQwMjMwMDc5OSwiaWF0IjoxNzc1MTAzNDQ5LCJhdF9oYXNoIjoiX1lYVlNyWm5SWTJuN0k3RUQ3eG8wZyIsInByb2plY3RfaWQiOiJoaGhiZXdhdGVyLTZnbHJuZnJsOWFjZTVjYTIiLCJtZXRhIjp7InBsYXRmb3JtIjoiQXBpS2V5In0sImFkbWluaXN0cmF0b3JfaWQiOiIyMDM5NTU0NjUwNzE4ODQ2OTc4IiwidXNlcl90eXBlIjoiIiwiY2xpZW50X3R5cGUiOiJjbGllbnRfc2VydmVyIiwiaXNfc3lzdGVtX2FkbWluIjp0cnVlfQ.R7DM_8zekMDT1__f-_GFJLBWFb5gflL4Ah8oPkZNBnpVfFnXGUosMUEg6Im83-NiPj_SLubsWssibg6eX_j_GdkgIJrIfJQDn8-BA-cFYBywhE7cAiSWaMgcUZyrKPgfJlSTnt1Zs_kVaYQeNDxnKLm0fLsnM2grPYdsZlQH-tMv_jHZX4DKe1-ZIpb5Lot8RF6CkSMHmIgzMun905nn6edS9ZIBvkPHH6pKx9pWtsNfbr_LsnoTggGF51AnSd5_SBuIaK804NGjgvReVfeu4uwTVs6QC31gmg31MxRtDTktlIhRwXzgadGScw_A4VZ7PDM8jEqVsYcQGSxWkc98sg");
     
     auth = app.auth();
     db = app.database();
