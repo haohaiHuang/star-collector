@@ -9,10 +9,10 @@ Users set a target number of stars, track daily progress, reach milestones (25%,
 ## Architecture
 
 - **Frontend**: Single HTML file (`StarCollector.html` / `index.html`) with embedded Tailwind CSS (CDN), Vanilla JS, and Material Symbols icons
-- **Backend**: FastAPI (Python) REST API on port 8000 (`backend/`)
+- **Backend**: FastAPI (Python) on port 5000 — serves both the HTML frontend and the REST API (same origin, no CORS issues)
 - **Database**: PostgreSQL (Replit built-in) — users table + star_data table
-- **Auth**: JWT tokens (HS256, 7-day expiry), passwords hashed with bcrypt
-- **Storage**: Star data stored per-user in PostgreSQL; JWT token stored in localStorage on the client
+- **Auth**: JWT tokens (HS256, 7-day expiry), passwords hashed with bcrypt; token stored in localStorage as `starCollectorToken`
+- **Storage**: Star data stored per-user in PostgreSQL; frontend uses relative API paths (`/auth/login`, `/data`, etc.)
 
 ## Project Structure
 
@@ -34,12 +34,11 @@ Users set a target number of stars, track daily progress, reach milestones (25%,
 
 ## Running the App
 
-Two workflows run simultaneously:
+One workflow runs everything:
 
 | Workflow | Command | Port |
 |---|---|---|
-| Start application | `python3 -m http.server 5000 --bind 0.0.0.0` | 5000 (frontend) |
-| Backend API | `python3 -m backend.run` | 8000 (API) |
+| Start application | `python3 -m backend.run` | 5000 (frontend + API) |
 
 ## API Endpoints
 

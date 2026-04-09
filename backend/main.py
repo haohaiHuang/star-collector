@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
@@ -199,3 +200,15 @@ def put_data(payload: dict, user_id: int = Depends(get_current_user)):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/StarCollector.html", response_class=HTMLResponse)
+def serve_star_collector():
+    with open("StarCollector.html", "r") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.get("/", response_class=HTMLResponse)
+def serve_index():
+    with open("index.html", "r") as f:
+        return HTMLResponse(content=f.read())

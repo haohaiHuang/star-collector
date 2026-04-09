@@ -171,7 +171,7 @@
 <button id="addStarBtn" class="group bg-gradient-to-br from-primary to-primary-container w-32 h-32 rounded-full flex items-center justify-center shadow-[0_12px_40px_-8px_rgba(126,82,0,0.4)] hover:scale-105 active:scale-95 transition-all duration-300">
 <span class="material-symbols-outlined text-on-primary text-6xl font-bold">add</span>
 </button>
-<p class="text-on-surface-variant font-bold text-lg">Tap to add a star</p>
+<p id="addStarLabel" class="text-on-surface-variant font-bold text-lg">Tap to add a star</p>
 </section>
 <section class="bg-surface-container-low rounded-2xl px-8 py-4 flex flex-col items-center border border-white/40 shadow-sm">
 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-1">This Month</p>
@@ -364,26 +364,12 @@ Your reward is:
                 <div class="px-8 pt-12 pb-10 flex flex-col items-center">
                     <!-- Title -->
                     <h1 class="font-headline font-extrabold text-2xl text-on-surface tracking-tight mb-8">My Account Details</h1>
-                    <!-- Form Fields -->
+                    <!-- Account Info -->
                     <div class="w-full space-y-6 mb-10">
-                        <!-- Account Name -->
                         <div class="space-y-2">
-                            <label class="font-label text-sm font-semibold text-on-surface-variant ml-2">Account Name</label>
-                            <div class="relative group">
-                                <input id="accountNameInput" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface focus:ring-2 focus:ring-primary-fixed-dim transition-all outline-none" readonly type="text" value="Alex Rivers"/>
-                                <button id="editAccountNameBtn" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary-dim p-1 bounce-effect">
-                                    <span class="material-symbols-outlined text-lg">edit</span>
-                                </button>
-                            </div>
-                        </div>
-                        <!-- Phone Number -->
-                        <div class="space-y-2">
-                            <label class="font-label text-sm font-semibold text-on-surface-variant ml-2">Login Phone Number</label>
-                            <div class="relative">
-                                <input id="accountPhoneInput" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface/60 focus:ring-0 outline-none cursor-not-allowed" disabled type="text" value="+1 (555) 0123-4567"/>
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">
-                                    <span class="material-symbols-outlined text-lg">lock</span>
-                                </div>
+                            <label class="font-label text-sm font-semibold text-on-surface-variant ml-2">Username</label>
+                            <div class="bg-surface-container-low rounded-xl px-5 py-4 font-body text-on-surface">
+                                <span id="accountUsernameDisplay">—</span>
                             </div>
                         </div>
                     </div>
@@ -471,6 +457,8 @@ Your reward is:
                                 <input type="password" id="loginPassword" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface focus:ring-2 focus:ring-primary-fixed-dim transition-all outline-none" placeholder="Enter your password" required>
                             </div>
                         </div>
+                        <!-- Error Message -->
+                        <p id="loginFormError" class="text-error text-sm font-medium text-center hidden"></p>
                         <!-- Submit Button -->
                         <button type="submit" id="submitLoginBtn" class="w-full py-5 px-8 bg-primary text-on-primary rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/10 hover:shadow-2xl hover:bg-primary-dim transition-all bounce-effect flex items-center justify-center gap-2 mt-6">
                             <span id="submitBtnText">Log In</span>
@@ -486,115 +474,162 @@ Your reward is:
         </div>
 <script>
 (function() {
-  const STORAGE_KEY = 'starCollector';
+  const TOKEN_KEY = 'starCollectorToken';
   let isLoggedIn = false;
   let currentUsername = '';
+  let data = getDefaultData();
 
-  function getData() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        if (!data.checkins || !Array.isArray(data.checkins)) data.checkins = [];
-        if (!data.milestones) data.milestones = { completed: [], total: [25, 50, 75] };
-        if (!data.milestones.completed || !Array.isArray(data.milestones.completed)) data.milestones.completed = [];
-        if (!data.milestones.total || !Array.isArray(data.milestones.total)) data.milestones.total = [25, 50, 75];
-        if (!data.reward) data.reward = '';
-        if (!data.customReward) data.customReward = '';
-        return data;
-      } catch (e) {
-        console.error('Error parsing stored data:', e);
-        return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth(), goal: 200, milestones: { completed: [], total: [25, 50, 75] }, checkins: [], reward: '', customReward: '' };
-      }
+  function getDefaultData() {
+    return {
+      totalStars: 0, monthlyStars: 0, lastMonth: new Date().getMonth(),
+      goal: 200, milestones: { completed: [], total: [25, 50, 75] },
+      checkins: [], reward: '', customReward: ''
+    };
+  }
+
+  function getToken() { return localStorage.getItem(TOKEN_KEY); }
+
+  async function apiCall(path, options) {
+    options = options || {};
+    const token = getToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    try {
+      const resp = await fetch(path, Object.assign({}, options, { headers: Object.assign(headers, options.headers || {}) }));
+      if (resp.status === 401) { handleLogout(); return null; }
+      return resp;
+    } catch (e) {
+      console.error('API error:', e);
+      return null;
     }
-    return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth(), goal: 200, milestones: { completed: [], total: [25, 50, 75] }, checkins: [], reward: '', customReward: '' };
   }
 
-  function saveData(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  async function loadDataFromServer() {
+    const resp = await apiCall('/data');
+    if (!resp || !resp.ok) return false;
+    const serverData = await resp.json();
+    data = Object.assign(getDefaultData(), serverData);
+    if (!Array.isArray(data.checkins)) data.checkins = [];
+    if (!data.milestones) data.milestones = { completed: [], total: [25, 50, 75] };
+    if (!Array.isArray(data.milestones.completed)) data.milestones.completed = [];
+    if (!Array.isArray(data.milestones.total)) data.milestones.total = [25, 50, 75];
+    return true;
   }
 
-  function checkMonthlyReset(data) {
+  function saveData() {
+    if (!isLoggedIn) return;
+    apiCall('/data', { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  function checkMonthlyReset() {
     const currentMonth = new Date().getMonth();
     if (data.lastMonth !== currentMonth) {
       data.monthlyStars = 0;
       data.lastMonth = currentMonth;
+      saveData();
     }
-    return data;
   }
 
-  function updateUI(data) {
-    const totalEl = document.getElementById('totalStars');
-    const monthlyEl = document.getElementById('monthlyStars');
-    const percentEl = document.getElementById('percentDisplay');
-    const goalDisplayEl = document.getElementById('goalDisplay');
-
-    totalEl.textContent = data.totalStars;
-    monthlyEl.textContent = data.monthlyStars + ' Stars';
-    goalDisplayEl.textContent = 'Goal: ' + data.goal;
-
+  function updateUI() {
+    document.getElementById('totalStars').textContent = data.totalStars;
+    document.getElementById('monthlyStars').textContent = data.monthlyStars + ' Stars';
+    document.getElementById('goalDisplay').textContent = 'Goal: ' + data.goal;
     const percent = Math.round((data.totalStars / data.goal) * 100);
-    const progressBar = document.getElementById('progressBar');
-    progressBar.style.width = Math.min(percent, 100) + '%';
-    if (percentEl) percentEl.textContent = percent + '%';
+    document.getElementById('progressBar').style.width = Math.min(percent, 100) + '%';
+    document.getElementById('percentDisplay').textContent = percent + '%';
   }
 
   function updateAccountUI() {
-    const accountName = document.getElementById('accountName');
-    const accountStatus = document.getElementById('accountStatus');
-    const accountActionText = document.getElementById('accountActionText');
-    
+    document.getElementById('accountName').textContent = isLoggedIn ? currentUsername : 'Not Logged In';
+    document.getElementById('accountStatus').textContent = isLoggedIn ? 'Logged In' : 'Guest User';
+    document.getElementById('accountActionText').textContent = isLoggedIn ? 'Manage' : 'Log In';
+    const btn = document.getElementById('addStarBtn');
+    const lbl = document.getElementById('addStarLabel');
+    btn.disabled = !isLoggedIn;
     if (isLoggedIn) {
-      accountName.textContent = currentUsername || 'User';
-      accountStatus.textContent = 'User';
-      accountActionText.textContent = 'Manage';
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      if (lbl) lbl.textContent = 'Tap to add a star';
     } else {
-      accountName.textContent = 'Not Logged In';
-      accountStatus.textContent = 'Guest User';
-      accountActionText.textContent = 'Log In';
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      if (lbl) lbl.textContent = 'Log in to add stars';
     }
   }
 
-  let data = getData();
-  data = checkMonthlyReset(data);
-  saveData(data);
-  updateUI(data);
-  updateAccountUI();
+  function handleLoginSuccess(token, username) {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.removeItem('starCollectorUsers');
+    localStorage.removeItem('starCollectorUsername');
+    localStorage.removeItem('starCollector');
+    isLoggedIn = true;
+    currentUsername = username;
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('starCollectorUsers');
+    localStorage.removeItem('starCollectorUsername');
+    localStorage.removeItem('starCollector');
+    isLoggedIn = false;
+    currentUsername = '';
+    data = getDefaultData();
+    document.getElementById('progressBar').classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+    updateUI();
+    updateAccountUI();
+  }
+
+  async function init() {
+    localStorage.removeItem('starCollectorUsers');
+    localStorage.removeItem('starCollectorUsername');
+    localStorage.removeItem('starCollector');
+
+    const token = getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const loaded = await loadDataFromServer();
+        if (loaded) {
+          currentUsername = payload.username || '';
+          isLoggedIn = true;
+          checkMonthlyReset();
+        }
+      } catch (e) {
+        handleLogout();
+      }
+    }
+    updateUI();
+    updateAccountUI();
+    if (isLoggedIn) checkGoalReached();
+  }
+
+  init();
 
   let isAddingStar = false;
   document.getElementById('addStarBtn').addEventListener('click', function() {
-    if (isAddingStar) return;
+    if (!isLoggedIn || isAddingStar) return;
     isAddingStar = true;
-    setTimeout(() => { isAddingStar = false; }, 300);
-    
+    setTimeout(function() { isAddingStar = false; }, 300);
+
     data.totalStars++;
     data.monthlyStars++;
-    
+
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1;
-    const day = today.getDate();
-    const todayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
-    if (!data.checkins.includes(todayStr)) {
-      data.checkins.push(todayStr);
-    }
-    
-    saveData(data);
-    updateUI(data);
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    if (!data.checkins.includes(todayStr)) data.checkins.push(todayStr);
+
+    saveData();
+    updateUI();
     checkMilestones();
     checkGoalReached();
   });
 
   function checkMilestones() {
     const progress = Math.round((data.totalStars / data.goal) * 100);
-    
-    data.milestones.total.forEach(milestone => {
+    data.milestones.total.forEach(function(milestone) {
       if (milestone === 100) return;
       if (progress >= milestone && !data.milestones.completed.includes(milestone)) {
         data.milestones.completed.push(milestone);
-        data.milestones.completed.sort((a, b) => a - b);
-        saveData(data);
+        data.milestones.completed.sort(function(a, b) { return a - b; });
+        saveData();
         showMilestoneModal(milestone);
       }
     });
@@ -612,93 +647,55 @@ Your reward is:
   });
 
   let calendarDate = new Date();
-
   document.getElementById('calendarBtn').addEventListener('click', function() {
     calendarDate = new Date();
     renderCalendar();
     document.getElementById('calendar-modal').style.display = 'flex';
   });
-
   document.getElementById('closeCalendarBtn').addEventListener('click', function() {
     document.getElementById('calendar-modal').style.display = 'none';
   });
-
   document.getElementById('calendarBackdrop').addEventListener('click', function() {
     document.getElementById('calendar-modal').style.display = 'none';
   });
 
   function renderCalendar() {
-    const calendarYear = calendarDate.getFullYear();
-    const calendarMonth = calendarDate.getMonth();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    
-    document.getElementById('calendarMonth').textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
-    
-    const calendarGrid = document.getElementById('calendarGrid');
-    calendarGrid.innerHTML = '';
-    
-    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const y = calendarDate.getFullYear(), m = calendarDate.getMonth();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calendarMonth').textContent = monthNames[m] + ' ' + y;
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    const firstDay = new Date(y, m, 1);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
     const today = new Date();
-    const todayYear = today.getFullYear();
-    const todayMonth = today.getMonth() + 1;
-    const todayDay = today.getDate();
-    const todayStr = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
-    const currentMonthStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
-    
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const monthStr = y + '-' + String(m + 1).padStart(2, '0');
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
-      const dateYear = date.getFullYear();
-      const dateMonth = date.getMonth() + 1;
-      const dateDay = date.getDate();
-      const dateString = `${dateYear}-${String(dateMonth).padStart(2, '0')}-${String(dateDay).padStart(2, '0')}`;
-      const isCurrentMonth = date.getMonth() === calendarMonth;
-      const isToday = dateString === todayStr;
+      const dStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+      const isCurrentMonth = date.getMonth() === m;
+      const isToday = dStr === todayStr;
       const isFuture = date > today;
-      const hasCheckin = data.checkins.includes(dateString);
-      
+      const hasCheckin = data.checkins.includes(dStr);
       const dayDiv = document.createElement('div');
       dayDiv.className = 'aspect-square flex flex-col items-center justify-center relative group';
-      
-      if (!isCurrentMonth || isFuture) {
-        dayDiv.classList.add('text-on-surface-variant/40');
-      }
-      
+      if (!isCurrentMonth || isFuture) dayDiv.classList.add('text-on-surface-variant/40');
       if (isToday) {
-        dayDiv.innerHTML = `
-          <div class="absolute inset-1 bg-primary rounded-full shadow-lg shadow-primary/20"></div>
-          <span class="font-headline font-bold text-sm text-on-primary relative z-10">${date.getDate()}</span>
-          ${hasCheckin ? '<span class="material-symbols-outlined text-[10px] text-on-primary absolute bottom-1 z-10" style="font-variation-settings: \'FILL\' 1;">star</span>' : ''}
-        `;
+        dayDiv.innerHTML = '<div class="absolute inset-1 bg-primary rounded-full shadow-lg shadow-primary/20"></div><span class="font-headline font-bold text-sm text-on-primary relative z-10">' + date.getDate() + '</span>' + (hasCheckin ? '<span class="material-symbols-outlined text-[10px] text-on-primary absolute bottom-1 z-10" style="font-variation-settings: \'FILL\' 1;">star</span>' : '');
       } else {
-        dayDiv.innerHTML = `
-          <span class="font-body font-semibold text-sm">${date.getDate()}</span>
-          ${hasCheckin ? '<span class="material-symbols-outlined text-[10px] text-primary-container absolute bottom-1" style="font-variation-settings: \'FILL\' 1;">star</span>' : ''}
-        `;
+        dayDiv.innerHTML = '<span class="font-body font-semibold text-sm">' + date.getDate() + '</span>' + (hasCheckin ? '<span class="material-symbols-outlined text-[10px] text-primary-container absolute bottom-1" style="font-variation-settings: \'FILL\' 1;">star</span>' : '');
       }
-      
-      calendarGrid.appendChild(dayDiv);
+      grid.appendChild(dayDiv);
     }
-    
-    updateCalendarStats(currentMonthStr);
-  }
-
-  function updateCalendarStats(monthStr) {
     document.getElementById('starsThisMonth').textContent = data.monthlyStars;
-    
-    const year = parseInt(monthStr.split('-')[0]);
-    const month = parseInt(monthStr.split('-')[1]) - 1;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const checkinsThisMonth = data.checkins.filter(d => d.startsWith(monthStr)).length;
-    document.getElementById('dayStreak').textContent = checkinsThisMonth;
+    document.getElementById('dayStreak').textContent = data.checkins.filter(function(d) { return d.startsWith(monthStr); }).length;
   }
 
   function checkGoalReached() {
     const progressBar = document.getElementById('progressBar');
-    if (data.totalStars >= data.goal) {
+    if (isLoggedIn && data.totalStars >= data.goal) {
       progressBar.classList.add('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
       document.getElementById('congratulations-modal').style.display = 'flex';
     } else {
@@ -708,47 +705,26 @@ Your reward is:
 
   document.getElementById('closeModalBtn').addEventListener('click', function() {
     document.getElementById('congratulations-modal').style.display = 'none';
-    
-    const rewardNameEl = document.getElementById('rewardName');
-    if (data.reward === 'custom' && data.customReward) {
-      rewardNameEl.textContent = data.customReward;
-    } else if (data.reward) {
-      rewardNameEl.textContent = data.reward;
-    } else {
-      rewardNameEl.textContent = 'None';
-    }
+    document.getElementById('rewardName').textContent = (data.reward === 'custom' && data.customReward) ? data.customReward : (data.reward || 'None');
     document.getElementById('reward-claim-modal').style.display = 'flex';
   });
 
   document.getElementById('resetBtn').addEventListener('click', function() {
-    const progressBar = document.getElementById('progressBar');
-    data.totalStars = 0;
-    data.monthlyStars = 0;
-    data.lastMonth = new Date().getMonth();
-    data.checkins = [];
-    data.milestones.completed = [];
-    data.reward = '';
-    data.customReward = '';
-    saveData(data);
-    updateUI(data);
-    progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+    data.totalStars = 0; data.monthlyStars = 0; data.lastMonth = new Date().getMonth();
+    data.checkins = []; data.milestones.completed = []; data.reward = ''; data.customReward = '';
+    saveData();
+    updateUI();
+    document.getElementById('progressBar').classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
     document.getElementById('congratulations-modal').style.display = 'none';
   });
 
   document.getElementById('collectRewardBtn').addEventListener('click', function() {
     document.getElementById('reward-claim-modal').style.display = 'none';
-    
-    const progressBar = document.getElementById('progressBar');
-    data.totalStars = 0;
-    data.monthlyStars = 0;
-    data.lastMonth = new Date().getMonth();
-    data.checkins = [];
-    data.milestones.completed = [];
-    data.reward = '';
-    data.customReward = '';
-    saveData(data);
-    updateUI(data);
-    progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+    data.totalStars = 0; data.monthlyStars = 0; data.lastMonth = new Date().getMonth();
+    data.checkins = []; data.milestones.completed = []; data.reward = ''; data.customReward = '';
+    saveData();
+    updateUI();
+    document.getElementById('progressBar').classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
   });
 
   document.getElementById('settingsBtn').addEventListener('click', function() {
@@ -767,7 +743,6 @@ Your reward is:
   document.getElementById('settingsBackdrop').addEventListener('click', function() {
     document.getElementById('settings-modal').style.display = 'none';
   });
-
   document.getElementById('cancelSettingsBtn').addEventListener('click', function() {
     document.getElementById('settings-modal').style.display = 'none';
   });
@@ -777,26 +752,17 @@ Your reward is:
     const deductAmount = parseInt(document.getElementById('deductInput').value) || 0;
     const rewardSelect = document.getElementById('rewardSelect').value;
     const customReward = document.getElementById('customRewardInput').value;
-
-    if (newGoal > 0 && newGoal !== data.goal) {
-      data.goal = newGoal;
-      data.milestones.completed = [];
-    }
-
+    if (newGoal > 0 && newGoal !== data.goal) { data.goal = newGoal; data.milestones.completed = []; }
     if (deductAmount > 0) {
       data.totalStars = Math.max(0, data.totalStars - deductAmount);
       data.monthlyStars = Math.max(0, data.monthlyStars - deductAmount);
     }
-
     if (rewardSelect) {
       data.reward = rewardSelect;
-      if (rewardSelect === 'custom' && customReward) {
-        data.customReward = customReward;
-      }
+      if (rewardSelect === 'custom' && customReward) data.customReward = customReward;
     }
-
-    saveData(data);
-    updateUI(data);
+    saveData();
+    updateUI();
     checkGoalReached();
     document.getElementById('settings-modal').style.display = 'none';
     document.getElementById('goalInput').value = '';
@@ -804,22 +770,15 @@ Your reward is:
   });
 
   document.getElementById('rewardSelect').addEventListener('change', function() {
-    const customContainer = document.getElementById('customRewardContainer');
-    if (this.value === 'custom') {
-      customContainer.classList.remove('hidden');
-    } else {
-      customContainer.classList.add('hidden');
-    }
+    document.getElementById('customRewardContainer').classList.toggle('hidden', this.value !== 'custom');
   });
 
-  document.getElementById('accountManagementCard').addEventListener('click', function(e) {
+  document.getElementById('accountManagementCard').addEventListener('click', function() {
+    document.getElementById('settings-modal').style.display = 'none';
     if (isLoggedIn) {
-      document.getElementById('settings-modal').style.display = 'none';
-      document.getElementById('accountNameInput').value = currentUsername || 'User';
-      document.getElementById('accountPhoneInput').value = '+1 (555) 0123-4567';
+      document.getElementById('accountUsernameDisplay').textContent = currentUsername;
       document.getElementById('account-modal').style.display = 'flex';
     } else {
-      document.getElementById('settings-modal').style.display = 'none';
       document.getElementById('login-modal').style.display = 'flex';
     }
   });
@@ -827,40 +786,18 @@ Your reward is:
   document.getElementById('closeAccountBtn').addEventListener('click', function() {
     document.getElementById('account-modal').style.display = 'none';
   });
-
   document.getElementById('account-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-      this.style.display = 'none';
-    }
-  });
-
-  document.getElementById('editAccountNameBtn').addEventListener('click', function() {
-    const accountNameInput = document.getElementById('accountNameInput');
-    if (accountNameInput.hasAttribute('readonly')) {
-      accountNameInput.removeAttribute('readonly');
-      accountNameInput.focus();
-      this.innerHTML = '<span class="material-symbols-outlined text-lg">check</span>';
-    } else {
-      accountNameInput.setAttribute('readonly', 'true');
-      currentUsername = accountNameInput.value;
-      localStorage.setItem('starCollectorUsername', currentUsername);
-      updateAccountUI();
-      this.innerHTML = '<span class="material-symbols-outlined text-lg">edit</span>';
-    }
+    if (e.target === this) this.style.display = 'none';
   });
 
   document.getElementById('logoutBtn').addEventListener('click', function() {
-    isLoggedIn = false;
-    currentUsername = '';
-    localStorage.removeItem('starCollectorUsername');
-    updateAccountUI();
+    handleLogout();
     document.getElementById('account-modal').style.display = 'none';
   });
 
   document.getElementById('loginBackdrop').addEventListener('click', function() {
     document.getElementById('login-modal').style.display = 'none';
   });
-
   document.getElementById('maybeLaterBtn').addEventListener('click', function() {
     document.getElementById('login-modal').style.display = 'none';
   });
@@ -882,17 +819,12 @@ Your reward is:
   });
 
   function updateLoginFormUI() {
-    if (isLoginMode) {
-      document.getElementById('loginFormTitle').textContent = 'Log In';
-      document.getElementById('submitBtnText').textContent = 'Log In';
-      document.getElementById('switchModeText').textContent = "Don't have an account?";
-      document.getElementById('switchModeBtn').textContent = 'Sign Up';
-    } else {
-      document.getElementById('loginFormTitle').textContent = 'Sign Up';
-      document.getElementById('submitBtnText').textContent = 'Sign Up';
-      document.getElementById('switchModeText').textContent = 'Already have an account?';
-      document.getElementById('switchModeBtn').textContent = 'Log In';
-    }
+    document.getElementById('loginFormTitle').textContent = isLoginMode ? 'Log In' : 'Sign Up';
+    document.getElementById('submitBtnText').textContent = isLoginMode ? 'Log In' : 'Sign Up';
+    document.getElementById('switchModeText').textContent = isLoginMode ? "Don't have an account?" : 'Already have an account?';
+    document.getElementById('switchModeBtn').textContent = isLoginMode ? 'Sign Up' : 'Log In';
+    const errEl = document.getElementById('loginFormError');
+    if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
   }
 
   document.getElementById('switchModeBtn').addEventListener('click', function() {
@@ -909,45 +841,47 @@ Your reward is:
     document.getElementById('login-modal').style.display = 'flex';
   });
 
-  document.getElementById('loginForm').addEventListener('submit', function(e) {
+  document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const existingUsers = JSON.parse(localStorage.getItem('starCollectorUsers') || '{}');
+    const errEl = document.getElementById('loginFormError');
+    const submitBtn = document.getElementById('submitLoginBtn');
+    const submitText = document.getElementById('submitBtnText');
 
-    if (isLoginMode) {
-      // Login logic
-      if (existingUsers[username] && existingUsers[username] === password) {
-        isLoggedIn = true;
-        currentUsername = username;
-        localStorage.setItem('starCollectorUsername', currentUsername);
+    if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
+    submitBtn.disabled = true;
+    submitText.textContent = isLoginMode ? 'Logging in...' : 'Signing up...';
+
+    try {
+      const resp = await fetch(isLoginMode ? '/auth/login' : '/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      const body = await resp.json();
+      if (resp.ok) {
+        handleLoginSuccess(body.access_token, body.username);
+        const loaded = await loadDataFromServer();
+        if (!loaded) data = getDefaultData();
+        else checkMonthlyReset();
+        updateUI();
         updateAccountUI();
+        if (isLoggedIn) checkGoalReached();
         document.getElementById('login-form-modal').style.display = 'none';
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
       } else {
-        alert('Invalid username or password');
+        const msg = body.detail || 'Something went wrong. Please try again.';
+        if (errEl) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
       }
-    } else {
-      // Sign up logic
-      if (existingUsers[username]) {
-        alert('Username already exists');
-      } else {
-        existingUsers[username] = password;
-        localStorage.setItem('starCollectorUsers', JSON.stringify(existingUsers));
-        isLoggedIn = true;
-        currentUsername = username;
-        localStorage.setItem('starCollectorUsername', currentUsername);
-        updateAccountUI();
-        document.getElementById('login-form-modal').style.display = 'none';
-      }
+    } catch (err) {
+      if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.classList.remove('hidden'); }
+    } finally {
+      submitBtn.disabled = false;
+      submitText.textContent = isLoginMode ? 'Log In' : 'Sign Up';
     }
   });
-
-  const savedUsername = localStorage.getItem('starCollectorUsername');
-  if (savedUsername) {
-    isLoggedIn = true;
-    currentUsername = savedUsername;
-    updateAccountUI();
-  }
 })();
 </script>
 </body>
