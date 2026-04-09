@@ -61,4 +61,3 @@ publicDir = "."
 [userenv]
 
 [userenv.shared]
-JWT_SECRET_KEY = "da8c8433e924b7ed6f69773132163e39822261d2b0b885ab12df62b8047ec0b1"

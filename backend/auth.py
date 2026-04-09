@@ -1,13 +1,29 @@
 import os
+import secrets
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 
 import bcrypt
 from jose import JWTError, jwt
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "star-collector-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
+_SECRET_FILE = Path(__file__).parent.parent / ".jwt_secret"
+
+
+def _load_or_create_secret() -> str:
+    env_secret = os.environ.get("JWT_SECRET_KEY")
+    if env_secret:
+        return env_secret
+    if _SECRET_FILE.exists():
+        return _SECRET_FILE.read_text().strip()
+    new_secret = secrets.token_hex(32)
+    _SECRET_FILE.write_text(new_secret)
+    return new_secret
+
+
+SECRET_KEY: str = _load_or_create_secret()
 
 
 def hash_password(password: str) -> str:

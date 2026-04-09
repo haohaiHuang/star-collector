@@ -1,4 +1,5 @@
 import json
+from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -9,17 +10,24 @@ from pydantic import BaseModel
 from .database import get_connection, get_cursor
 from .auth import hash_password, verify_password, create_access_token, decode_token
 
-app = FastAPI(title="Star Collector API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+INIT_SQL = """
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
-security = HTTPBearer()
+CREATE TABLE IF NOT EXISTS star_data (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    data JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS star_data_user_id_idx ON star_data(user_id);
+"""
 
 DEFAULT_STAR_DATA = {
     "totalStars": 0,
@@ -33,6 +41,31 @@ DEFAULT_STAR_DATA = {
 }
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    conn = get_connection()
+    try:
+        with get_cursor(conn) as cur:
+            cur.execute(INIT_SQL)
+        conn.commit()
+    finally:
+        conn.close()
+    yield
+
+
+app = FastAPI(title="Star Collector API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+security = HTTPBearer()
+
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
@@ -41,17 +74,6 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
-
-
-class StarData(BaseModel):
-    totalStars: int = 0
-    monthlyStars: int = 0
-    lastMonth: Optional[int] = None
-    goal: int = 200
-    milestones: dict = {"completed": [], "total": [25, 50, 75]}
-    checkins: list = []
-    reward: str = ""
-    customReward: str = ""
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
