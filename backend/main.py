@@ -2,13 +2,25 @@ import json
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from .database import get_connection, get_cursor
 from .auth import hash_password, verify_password, create_access_token, decode_token
+
+
+class _Bearer401(HTTPBearer):
+    async def __call__(self, request: Request):
+        try:
+            return await super().__call__(request)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
 
 INIT_SQL = """
@@ -58,12 +70,12 @@ app = FastAPI(title="Star Collector API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-security = HTTPBearer()
+security = _Bearer401()
 
 
 class RegisterRequest(BaseModel):
