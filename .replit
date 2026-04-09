@@ -1,4 +1,4 @@
-modules = ["web", "python-3.11"]
+modules = ["web", "python-3.11", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -17,6 +17,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Backend API"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -29,10 +33,32 @@ waitForPort = 5000
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "Backend API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -m backend.run"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 8000
+externalPort = 8000
+exposeLocalhost = true
+
 [deployment]
 deploymentTarget = "static"
 publicDir = "."
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET_KEY = "da8c8433e924b7ed6f69773132163e39822261d2b0b885ab12df62b8047ec0b1"
