@@ -557,6 +557,7 @@ Your reward is:
 
   function handleLoginSuccess(token, username) {
     localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem('starCollectorUser', username);
     localStorage.removeItem('starCollectorUsers');
     localStorage.removeItem('starCollectorUsername');
     localStorage.removeItem('starCollector');
@@ -566,6 +567,7 @@ Your reward is:
 
   function handleLogout() {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('starCollectorUser');
     localStorage.removeItem('starCollectorUsers');
     localStorage.removeItem('starCollectorUsername');
     localStorage.removeItem('starCollector');
@@ -584,15 +586,12 @@ Your reward is:
 
     const token = getToken();
     if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const loaded = await loadDataFromServer();
-        if (loaded) {
-          currentUsername = payload.username || '';
-          isLoggedIn = true;
-          checkMonthlyReset();
-        }
-      } catch (e) {
+      const loaded = await loadDataFromServer();
+      if (loaded) {
+        currentUsername = localStorage.getItem('starCollectorUser') || '';
+        isLoggedIn = true;
+        checkMonthlyReset();
+      } else {
         handleLogout();
       }
     }
