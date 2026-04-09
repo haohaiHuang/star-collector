@@ -266,7 +266,7 @@ Your reward is:
 <div class="w-px h-8 bg-outline-variant/30"></div>
 <div class="text-center">
 <p id="dayStreak" class="font-headline font-extrabold text-2xl text-tertiary">0</p>
-<p class="font-label text-[10px] uppercase text-on-surface-variant font-bold tracking-widest">Day Streak</p>
+<p class="font-label text-[10px] uppercase text-on-surface-variant font-bold tracking-widest">本月已打卡</p>
 </div>
 </div>
 </div>
@@ -693,8 +693,7 @@ Your reward is:
     const month = parseInt(monthStr.split('-')[1]) - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const checkinsThisMonth = data.checkins.filter(d => d.startsWith(monthStr)).length;
-    const daysWithoutCheckin = daysInMonth - checkinsThisMonth;
-    document.getElementById('dayStreak').textContent = daysWithoutCheckin;
+    document.getElementById('dayStreak').textContent = checkinsThisMonth;
   }
 
   function checkGoalReached() {
@@ -779,30 +778,14 @@ Your reward is:
     const rewardSelect = document.getElementById('rewardSelect').value;
     const customReward = document.getElementById('customRewardInput').value;
 
-    if (newGoal > 0) {
+    if (newGoal > 0 && newGoal !== data.goal) {
       data.goal = newGoal;
+      data.milestones.completed = [];
     }
 
     if (deductAmount > 0) {
       data.totalStars = Math.max(0, data.totalStars - deductAmount);
       data.monthlyStars = Math.max(0, data.monthlyStars - deductAmount);
-      
-      let remaining = deductAmount;
-      while (remaining > 0 && data.checkins.length > 0) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth() + 1;
-        const day = today.getDate();
-        const todayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const lastCheckin = data.checkins[data.checkins.length - 1];
-        
-        if (lastCheckin === todayStr) {
-          data.checkins.pop();
-          remaining--;
-        } else {
-          break;
-        }
-      }
     }
 
     if (rewardSelect) {
@@ -923,6 +906,7 @@ Your reward is:
 
   document.getElementById('loginFormBackdrop').addEventListener('click', function() {
     document.getElementById('login-form-modal').style.display = 'none';
+    document.getElementById('login-modal').style.display = 'flex';
   });
 
   document.getElementById('loginForm').addEventListener('submit', function(e) {
