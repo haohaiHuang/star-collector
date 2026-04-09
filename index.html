@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Star Collector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#392e00",
+              "secondary": "#9b3f00",
+              "surface-container-high": "#fae18c",
+              "tertiary": "#006b1b",
+              "surface": "#fff6e1",
+              "secondary-fixed": "#ffc5aa",
+              "error-container": "#f95630",
+              "inverse-primary": "#feaa00",
+              "outline": "#86763b",
+              "on-error": "#ffefec",
+              "tertiary-container": "#91f78e",
+              "secondary-fixed-dim": "#ffb28c",
+              "on-primary-fixed": "#331f00",
+              "secondary-dim": "#883700",
+              "primary-fixed-dim": "#ec9e00",
+              "on-primary-fixed-variant": "#5b3b00",
+              "surface-bright": "#fff6e1",
+              "surface-container-low": "#fff0c4",
+              "on-tertiary-container": "#005e17",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#ffc5aa",
+              "surface-container": "#ffe796",
+              "tertiary-fixed": "#91f78e",
+              "inverse-surface": "#130e00",
+              "tertiary-dim": "#005d16",
+              "inverse-on-surface": "#ae9c5e",
+              "background": "#fff6e1",
+              "surface-tint": "#7e5200",
+              "on-error-container": "#520c00",
+              "on-secondary-fixed": "#5c2300",
+              "on-primary-container": "#503300",
+              "on-surface-variant": "#695b23",
+              "surface-variant": "#f5dc81",
+              "tertiary-fixed-dim": "#83e881",
+              "on-secondary": "#fff0ea",
+              "primary-container": "#feaa00",
+              "on-primary": "#fff0e2",
+              "on-secondary-container": "#7b3100",
+              "surface-dim": "#edd374",
+              "primary-dim": "#6e4800",
+              "error": "#b02500",
+              "primary": "#7e5200",
+              "error-dim": "#b92902",
+              "primary-fixed": "#feaa00",
+              "surface-container-highest": "#f5dc81",
+              "outline-variant": "#bfac6c",
+              "on-secondary-fixed-variant": "#893700",
+              "on-tertiary-fixed-variant": "#00691a"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .bounce-effect:active { transform: scale(0.95); }
+        .star-glow {
+            filter: drop-shadow(0 0 12px rgba(254, 170, 0, 0.4));
+        }
+        .confetti-slow {
+            animation: confetti-fall 4s linear infinite;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .animate-in {
+            animation: fade-in-zoom-in 0.3s ease-out;
+        }
+        @keyframes fade-in-zoom-in {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .glass-modal {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      body {
+          min-height: 100dvh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          overscroll-behavior: none;
+        }
+        #addStarBtn {
+          touch-action: manipulation;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+</style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<header class="flex items-center justify-between px-6 py-6 w-full sticky top-0 z-40 bg-background/80 backdrop-blur-md">
+<button id="calendarBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors bounce-effect">
+<span class="material-symbols-outlined text-on-surface-variant">calendar_month</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#7e5200]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h1 class="font-headline font-black italic text-[#7e5200] text-xl tracking-tight uppercase">Star Collector</h1>
+</div>
+<button id="settingsBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors bounce-effect">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</header>
+<main class="flex-1 px-6 flex flex-col items-center justify-center space-y-12 max-w-lg mx-auto w-full pb-16">
+<section class="w-full text-center space-y-6">
+<div class="relative inline-block">
+<div class="absolute inset-0 bg-primary-container/30 blur-3xl rounded-full scale-150"></div>
+<div class="relative">
+<p class="font-headline font-extrabold text-on-surface-variant/60 tracking-widest uppercase text-sm mb-2">Total Collection</p>
+<div class="flex items-center justify-center gap-4">
+<span class="material-symbols-outlined text-5xl text-primary star-glow" style="font-variation-settings: 'FILL' 1;">stars</span>
+<h2 id="totalStars" class="font-headline font-black text-8xl text-on-surface tracking-tighter">124</h2>
+</div>
+</div>
+</div>
+<div class="w-full max-w-xs mx-auto space-y-3">
+<div class="flex justify-between items-end px-1">
+<span id="goalDisplay" class="font-headline font-bold text-lg text-primary">Goal: 200</span>
+<span id="percentDisplay" class="font-bold text-sm text-on-surface-variant">62%</span>
+</div>
+<div class="relative h-6 w-full bg-surface-container rounded-full p-1 shadow-inner">
+<div id="progressBar" class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full w-[62%] transition-all duration-1000"></div>
+<div class="absolute inset-0 flex items-center px-1 pointer-events-none">
+<div class="absolute left-[25%] -translate-x-1/2 flex flex-col items-center">
+<div class="w-1.5 h-1.5 rounded-full bg-on-surface/20"></div>
+</div>
+<div class="absolute left-[50%] -translate-x-1/2 flex flex-col items-center">
+<div class="w-1.5 h-1.5 rounded-full bg-on-surface/20"></div>
+</div>
+<div class="absolute left-[75%] -translate-x-1/2 flex flex-col items-center">
+<div class="w-1.5 h-1.5 rounded-full bg-on-surface/20"></div>
+</div>
+</div>
+</div>
+<div class="relative w-full h-4 mt-1">
+<div class="absolute left-[25%] -translate-x-1/2 text-[10px] font-bold text-on-surface-variant/60">25%</div>
+<div class="absolute left-[50%] -translate-x-1/2 text-[10px] font-bold text-on-surface-variant/60">50%</div>
+<div class="absolute left-[75%] -translate-x-1/2 text-[10px] font-bold text-on-surface-variant/60">75%</div>
+</div>
+</div>
+</section>
+<section class="flex flex-col items-center gap-4">
+<button id="addStarBtn" class="group bg-gradient-to-br from-primary to-primary-container w-32 h-32 rounded-full flex items-center justify-center shadow-[0_12px_40px_-8px_rgba(126,82,0,0.4)] hover:scale-105 active:scale-95 transition-all duration-300">
+<span class="material-symbols-outlined text-on-primary text-6xl font-bold">add</span>
+</button>
+<p class="text-on-surface-variant font-bold text-lg">Tap to add a star</p>
+</section>
+<section class="bg-surface-container-low rounded-2xl px-8 py-4 flex flex-col items-center border border-white/40 shadow-sm">
+<p class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-1">This Month</p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span id="monthlyStars" class="font-headline font-bold text-2xl text-on-surface">42 Stars</span>
+</div>
+</section>
+</main>
+<div class="fixed inset-0 z-[60] flex items-center justify-center px-6" id="congratulations-modal" style="display: none;">
+<div class="absolute inset-0 bg-on-background/40 backdrop-blur-sm"></div>
+<div class="relative bg-surface p-8 rounded-lg shadow-2xl border border-surface-container-high w-full max-w-sm text-center animate-in">
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-lg border-4 border-surface">
+<span class="material-symbols-outlined text-5xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div class="mt-8 space-y-4">
+<h3 class="font-headline font-black text-3xl text-on-surface tracking-tight">Congratulations!</h3>
+<div class="flex justify-center gap-1">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary scale-125" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="text-on-surface-variant font-medium leading-relaxed">
+                    You've reached your amazing goal of <span class="font-bold text-primary">200 stars</span>! Your consistency is truly shining bright.
+                </p>
+</div>
+<div class="mt-8 space-y-3">
+<button id="resetBtn" class="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dim transition-colors bounce-effect">
+                    Reset and Start Over
+                </button>
+<button id="closeModalBtn" class="w-full bg-surface-container text-on-surface-variant font-headline font-bold py-3 rounded-xl hover:bg-surface-container-high transition-colors">
+                    Claim Reward
+                </button>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-[70] flex items-center justify-center px-6" id="reward-claim-modal" style="display: none;">
+<div class="absolute inset-0 bg-on-background/40 backdrop-blur-sm"></div>
+<div class="relative bg-surface p-8 rounded-lg shadow-2xl border border-surface-container-high w-full max-w-sm text-center animate-in">
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-lg border-4 border-surface">
+<span class="material-symbols-outlined text-5xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">card_giftcard</span>
+</div>
+<div class="mt-8 space-y-4">
+<h3 class="font-headline font-black text-3xl text-on-surface tracking-tight">You've Earned a Reward!</h3>
+<div class="flex justify-center gap-1 mb-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary scale-125" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="text-on-surface-variant font-medium leading-relaxed">
+Your reward is:
+</p>
+<p id="rewardName" class="font-headline font-bold text-2xl text-primary">Movie Night</p>
+</div>
+<div class="mt-8 space-y-3">
+<button id="collectRewardBtn" class="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dim transition-colors bounce-effect">
+                    Collect Reward
+                </button>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-50 flex items-center justify-center px-6" id="calendar-modal" style="display: none;">
+<div class="absolute inset-0 bg-black/20 backdrop-blur-sm" id="calendarBackdrop"></div>
+<div class="relative w-full max-w-md bg-white/80 backdrop-blur-2xl rounded-lg shadow-[0_32px_64px_-12px_rgba(57,46,0,0.15)] overflow-hidden flex flex-col">
+<div class="flex items-center justify-between px-6 pt-8 pb-4">
+<div class="space-y-1">
+<h2 class="font-headline text-2xl font-extrabold text-on-surface tracking-tight">Monthly Journey</h2>
+<p id="calendarMonth" class="font-body text-sm text-on-surface-variant font-medium">April 2026</p>
+</div>
+<button id="closeCalendarBtn" class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="px-6 pb-6">
+<div class="grid grid-cols-7 mb-4">
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">S</div>
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">M</div>
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">T</div>
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">W</div>
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">T</div>
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">F</div>
+<div class="text-center font-headline text-[10px] font-bold text-outline uppercase tracking-widest">S</div>
+</div>
+<div id="calendarGrid" class="grid grid-cols-7 gap-y-3">
+</div>
+</div>
+<div class="bg-surface-container-low/50 p-6 flex items-center justify-around border-t border-outline-variant/10">
+<div class="text-center">
+<p id="starsThisMonth" class="font-headline font-extrabold text-2xl text-primary">0</p>
+<p class="font-label text-[10px] uppercase text-on-surface-variant font-bold tracking-widest">Stars This Month</p>
+</div>
+<div class="w-px h-8 bg-outline-variant/30"></div>
+<div class="text-center">
+<p id="dayStreak" class="font-headline font-extrabold text-2xl text-tertiary">0</p>
+<p class="font-label text-[10px] uppercase text-on-surface-variant font-bold tracking-widest">Day Streak</p>
+</div>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-[60] flex items-center justify-center px-6" id="milestone-modal" style="display: none;">
+<div class="absolute inset-0 bg-background/60 backdrop-blur-sm"></div>
+<div class="relative bg-surface p-8 rounded-lg shadow-2xl border border-surface-container-high max-w-sm w-full text-center space-y-6 animate-in zoom-in duration-300">
+<div class="relative inline-block">
+<div class="absolute inset-0 bg-primary-container/40 blur-2xl rounded-full scale-150"></div>
+<div class="relative w-24 h-24 bg-gradient-to-br from-primary to-primary-container rounded-full flex items-center justify-center shadow-lg mx-auto">
+<span class="material-symbols-outlined text-on-primary text-5xl" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="space-y-2">
+<h3 id="milestoneTitle" class="font-headline font-black text-3xl text-on-surface leading-tight">Milestone Reached!</h3>
+<p id="milestoneText" class="text-on-surface-variant font-medium">You've reached the <span id="milestonePercent" class="text-primary font-bold">50%</span> milestone! (<span id="milestoneCount">100</span>/<span id="milestoneGoal">200</span> stars)</p>
+</div>
+<div class="flex flex-col gap-3">
+<button id="keepGoingBtn" class="w-full py-4 bg-primary text-on-primary font-headline font-bold rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all bounce-effect">
+                Keep Going
+            </button>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-[70] flex items-center justify-center p-6" id="settings-modal" style="display: none;">
+<div class="absolute inset-0 bg-on-surface/10 backdrop-blur-md" id="settingsBackdrop"></div>
+<div class="glass-modal w-full max-w-sm rounded-lg p-8 shadow-2xl relative animate-in">
+<h2 class="font-headline font-extrabold text-2xl text-on-surface mb-2">Settings</h2>
+<p class="text-on-surface-variant text-xs font-medium mb-6">Review your changes carefully. Updates are applied only when you save.</p>
+<div class="space-y-2">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Account Management</label>
+<div id="accountManagementCard" class="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-surface-container transition-colors">
+<div>
+<p id="accountName" class="font-headline font-bold text-on-surface leading-tight">Not Logged In</p>
+<p id="accountStatus" class="text-[10px] font-bold text-primary/60 uppercase tracking-widest mt-0.5">Guest User</p>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span id="accountActionText" class="text-xs font-bold font-headline">Log In</span>
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Total Star Goal</label>
+<div class="relative">
+<input id="goalInput" class="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-4 font-headline font-bold text-lg focus:ring-2 focus:ring-primary/20 text-on-surface" placeholder="e.g. 500" type="number"/>
+<div class="absolute inset-0 rounded-DEFAULT ring-1 ring-outline-variant/20 pointer-events-none"></div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Number of Stars to Deduct</label>
+<div class="relative">
+<input id="deductInput" class="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-4 font-headline font-bold text-lg focus:ring-2 focus:ring-secondary/20 text-on-surface" placeholder="0" type="number"/>
+<div class="absolute inset-0 rounded-DEFAULT ring-1 ring-outline-variant/20 pointer-events-none"></div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Reward Settings</label>
+<div class="relative">
+<select id="rewardSelect" class="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-4 font-headline font-bold text-lg focus:ring-2 focus:ring-primary/20 text-on-surface appearance-none cursor-pointer">
+<option value="">Select a reward...</option>
+<option value="Movie Night">Movie Night</option>
+<option value="Ice Cream">Ice Cream</option>
+<option value="New Book">New Book</option>
+<option value="Game Time">Game Time</option>
+<option value="Special Treat">Special Treat</option>
+<option value="custom">Custom...</option>
+</select>
+</div>
+</div>
+<div id="customRewardContainer" class="space-y-2 hidden">
+<label class="block font-headline font-bold text-on-surface-variant text-sm px-1">Custom Reward</label>
+<div class="relative">
+<input id="customRewardInput" class="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-4 font-headline font-bold text-lg focus:ring-2 focus:ring-primary/20 text-on-surface" placeholder="Enter custom reward..." type="text"/>
+</div>
+</div>
+<div class="flex flex-col gap-3 pt-4">
+<button id="saveSettingsBtn" class="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                        Save Changes
+                    </button>
+<button id="cancelSettingsBtn" class="w-full bg-transparent text-on-surface-variant font-headline font-bold py-3 rounded-full hover:bg-surface-container-low transition-colors">
+                        Cancel
+                    </button>
+</div>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 glass-modal bg-on-surface/5" id="account-modal" style="display: none;">
+            <!-- Modal Card -->
+            <div class="w-full max-w-md bg-surface-container-lowest/80 backdrop-blur-3xl rounded-xl shadow-[0_-4px_32px_rgba(57,46,0,0.08)] overflow-hidden relative border border-outline-variant/10">
+                <!-- Close Trigger -->
+                <button id="closeAccountBtn" class="absolute top-6 right-6 text-on-surface-variant bounce-effect">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="px-8 pt-12 pb-10 flex flex-col items-center">
+                    <!-- Title -->
+                    <h1 class="font-headline font-extrabold text-2xl text-on-surface tracking-tight mb-8">My Account Details</h1>
+                    <!-- Form Fields -->
+                    <div class="w-full space-y-6 mb-10">
+                        <!-- Account Name -->
+                        <div class="space-y-2">
+                            <label class="font-label text-sm font-semibold text-on-surface-variant ml-2">Account Name</label>
+                            <div class="relative group">
+                                <input id="accountNameInput" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface focus:ring-2 focus:ring-primary-fixed-dim transition-all outline-none" readonly type="text" value="Alex Rivers"/>
+                                <button id="editAccountNameBtn" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary-dim p-1 bounce-effect">
+                                    <span class="material-symbols-outlined text-lg">edit</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Phone Number -->
+                        <div class="space-y-2">
+                            <label class="font-label text-sm font-semibold text-on-surface-variant ml-2">Login Phone Number</label>
+                            <div class="relative">
+                                <input id="accountPhoneInput" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface/60 focus:ring-0 outline-none cursor-not-allowed" disabled type="text" value="+1 (555) 0123-4567"/>
+                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">
+                                    <span class="material-symbols-outlined text-lg">lock</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Log Out Button -->
+                    <button id="logoutBtn" class="w-full bg-secondary text-on-secondary font-headline font-bold py-5 px-8 rounded-full flex items-center justify-center gap-3 shadow-xl hover:bg-secondary-dim transition-colors bounce-effect">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span>Log Out</span>
+                    </button>
+                    <!-- Version Tag -->
+                    <p class="mt-8 font-label text-xs font-medium text-on-surface-variant/50 tracking-wider">
+                        Version 2.4.1 (Stable)
+                    </p>
+                </div>
+                <!-- Bottom Decorative Glow -->
+                <div class="h-2 w-full bg-gradient-to-r from-primary-fixed to-surface-variant opacity-30"></div>
+            </div>
+        </div>
+<div class="fixed inset-0 z-[100] flex items-center justify-center px-4" id="login-modal" style="display: none;">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-on-background/20 backdrop-blur-md" id="loginBackdrop"></div>
+            <!-- Modal Content -->
+            <div class="relative w-full max-w-md glass-modal rounded-lg p-8 shadow-[0_32px_64px_-12px_rgba(57,46,0,0.15)] flex flex-col items-center text-center">
+                <!-- Large User Icon Placeholder -->
+                <div class="mb-8 relative">
+                    <!-- Asymmetric Star Decal -->
+                    <div class="absolute -top-6 -right-4 transform rotate-15">
+                        <span class="material-symbols-outlined text-primary-fixed text-4xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                    </div>
+                    <div class="w-28 h-28 rounded-full bg-surface-container-high flex items-center justify-center shadow-inner">
+                        <span class="material-symbols-outlined text-on-surface-variant text-5xl" style="font-variation-settings: 'wght' 200;">person</span>
+                    </div>
+                </div>
+                <!-- Headline -->
+                <h2 class="font-headline text-3xl font-extrabold text-on-background mb-4 tracking-tight leading-tight">
+                    NOT LOGGED IN
+                </h2>
+                <!-- Subtext -->
+                <p class="font-body text-on-surface-variant mb-10 text-lg leading-relaxed px-2">
+                    Log in to sync your stars and track your progress across devices.
+                </p>
+                <!-- Action Buttons -->
+                <div class="w-full space-y-4 mb-8">
+                    <!-- Primary Log In Button -->
+                    <button id="loginBtn" class="w-full py-5 px-8 bg-primary text-on-primary rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/10 hover:shadow-2xl hover:bg-primary-dim transition-all bounce-effect flex items-center justify-center gap-2">
+                        Log In
+                    </button>
+                    <!-- Secondary Sign Up Button -->
+                    <button id="signupBtn" class="w-full py-5 px-8 bg-surface-container-high text-on-surface rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-all bounce-effect">
+                        Sign Up
+                    </button>
+                </div>
+                <!-- Maybe Later Link -->
+                <button id="maybeLaterBtn" class="font-headline font-bold text-primary/70 text-sm tracking-widest hover:text-primary transition-colors uppercase">
+                    MAYBE LATER
+                </button>
+            </div>
+        </div>
+        <!-- Login/Register Form Modal -->
+        <div class="fixed inset-0 z-[110] flex items-center justify-center px-4" id="login-form-modal" style="display: none;">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-on-background/20 backdrop-blur-md" id="loginFormBackdrop"></div>
+            <!-- Modal Content -->
+            <div class="relative w-full max-w-md glass-modal rounded-lg p-8 shadow-[0_32px_64px_-12px_rgba(57,46,0,0.15)]">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-8">
+                    <h2 id="loginFormTitle" class="font-headline text-2xl font-extrabold text-on-surface">Log In</h2>
+                    <button id="closeLoginFormBtn" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <!-- Form -->
+                <form id="loginForm">
+                    <div class="space-y-4">
+                        <!-- Username Field -->
+                        <div class="space-y-2">
+                            <label for="loginUsername" class="block font-headline font-bold text-on-surface-variant text-sm">Username</label>
+                            <div class="relative">
+                                <input type="text" id="loginUsername" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface focus:ring-2 focus:ring-primary-fixed-dim transition-all outline-none" placeholder="Enter your username" required>
+                            </div>
+                        </div>
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <label for="loginPassword" class="block font-headline font-bold text-on-surface-variant text-sm">Password</label>
+                            <div class="relative">
+                                <input type="password" id="loginPassword" class="w-full bg-surface-container-low border-none rounded-xl px-5 py-4 font-body text-on-surface focus:ring-2 focus:ring-primary-fixed-dim transition-all outline-none" placeholder="Enter your password" required>
+                            </div>
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit" id="submitLoginBtn" class="w-full py-5 px-8 bg-primary text-on-primary rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/10 hover:shadow-2xl hover:bg-primary-dim transition-all bounce-effect flex items-center justify-center gap-2 mt-6">
+                            <span id="submitBtnText">Log In</span>
+                        </button>
+                        <!-- Switch Mode Link -->
+                        <p class="text-center font-body text-on-surface-variant text-sm mt-4">
+                            <span id="switchModeText">Don't have an account?</span>
+                            <button type="button" id="switchModeBtn" class="font-headline font-bold text-primary hover:text-primary-dim transition-colors ml-1">Sign Up</button>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+<script>
+(function() {
+  const STORAGE_KEY = 'starCollector';
+  let isLoggedIn = false;
+  let currentUsername = '';
+
+  function getData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        if (!data.checkins || !Array.isArray(data.checkins)) data.checkins = [];
+        if (!data.milestones) data.milestones = { completed: [], total: [25, 50, 75] };
+        if (!data.milestones.completed || !Array.isArray(data.milestones.completed)) data.milestones.completed = [];
+        if (!data.milestones.total || !Array.isArray(data.milestones.total)) data.milestones.total = [25, 50, 75];
+        if (!data.reward) data.reward = '';
+        if (!data.customReward) data.customReward = '';
+        return data;
+      } catch (e) {
+        console.error('Error parsing stored data:', e);
+        return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth(), goal: 200, milestones: { completed: [], total: [25, 50, 75] }, checkins: [], reward: '', customReward: '' };
+      }
+    }
+    return { totalStars: 124, monthlyStars: 42, lastMonth: new Date().getMonth(), goal: 200, milestones: { completed: [], total: [25, 50, 75] }, checkins: [], reward: '', customReward: '' };
+  }
+
+  function saveData(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function checkMonthlyReset(data) {
+    const currentMonth = new Date().getMonth();
+    if (data.lastMonth !== currentMonth) {
+      data.monthlyStars = 0;
+      data.lastMonth = currentMonth;
+    }
+    return data;
+  }
+
+  function updateUI(data) {
+    const totalEl = document.getElementById('totalStars');
+    const monthlyEl = document.getElementById('monthlyStars');
+    const percentEl = document.getElementById('percentDisplay');
+    const goalDisplayEl = document.getElementById('goalDisplay');
+
+    totalEl.textContent = data.totalStars;
+    monthlyEl.textContent = data.monthlyStars + ' Stars';
+    goalDisplayEl.textContent = 'Goal: ' + data.goal;
+
+    const percent = Math.round((data.totalStars / data.goal) * 100);
+    const progressBar = document.getElementById('progressBar');
+    progressBar.style.width = Math.min(percent, 100) + '%';
+    if (percentEl) percentEl.textContent = percent + '%';
+  }
+
+  function updateAccountUI() {
+    const accountName = document.getElementById('accountName');
+    const accountStatus = document.getElementById('accountStatus');
+    const accountActionText = document.getElementById('accountActionText');
+    
+    if (isLoggedIn) {
+      accountName.textContent = currentUsername || 'User';
+      accountStatus.textContent = 'User';
+      accountActionText.textContent = 'Manage';
+    } else {
+      accountName.textContent = 'Not Logged In';
+      accountStatus.textContent = 'Guest User';
+      accountActionText.textContent = 'Log In';
+    }
+  }
+
+  let data = getData();
+  data = checkMonthlyReset(data);
+  saveData(data);
+  updateUI(data);
+  updateAccountUI();
+
+  let isAddingStar = false;
+  document.getElementById('addStarBtn').addEventListener('click', function() {
+    if (isAddingStar) return;
+    isAddingStar = true;
+    setTimeout(() => { isAddingStar = false; }, 300);
+    
+    data.totalStars++;
+    data.monthlyStars++;
+    
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    const todayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    if (!data.checkins.includes(todayStr)) {
+      data.checkins.push(todayStr);
+    }
+    
+    saveData(data);
+    updateUI(data);
+    checkMilestones();
+    checkGoalReached();
+  });
+
+  function checkMilestones() {
+    const progress = Math.round((data.totalStars / data.goal) * 100);
+    
+    data.milestones.total.forEach(milestone => {
+      if (milestone === 100) return;
+      if (progress >= milestone && !data.milestones.completed.includes(milestone)) {
+        data.milestones.completed.push(milestone);
+        data.milestones.completed.sort((a, b) => a - b);
+        saveData(data);
+        showMilestoneModal(milestone);
+      }
+    });
+  }
+
+  function showMilestoneModal(milestone) {
+    document.getElementById('milestonePercent').textContent = milestone + '%';
+    document.getElementById('milestoneCount').textContent = data.totalStars;
+    document.getElementById('milestoneGoal').textContent = data.goal;
+    document.getElementById('milestone-modal').style.display = 'flex';
+  }
+
+  document.getElementById('keepGoingBtn').addEventListener('click', function() {
+    document.getElementById('milestone-modal').style.display = 'none';
+  });
+
+  let calendarDate = new Date();
+
+  document.getElementById('calendarBtn').addEventListener('click', function() {
+    calendarDate = new Date();
+    renderCalendar();
+    document.getElementById('calendar-modal').style.display = 'flex';
+  });
+
+  document.getElementById('closeCalendarBtn').addEventListener('click', function() {
+    document.getElementById('calendar-modal').style.display = 'none';
+  });
+
+  document.getElementById('calendarBackdrop').addEventListener('click', function() {
+    document.getElementById('calendar-modal').style.display = 'none';
+  });
+
+  function renderCalendar() {
+    const calendarYear = calendarDate.getFullYear();
+    const calendarMonth = calendarDate.getMonth();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    document.getElementById('calendarMonth').textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
+    
+    const calendarGrid = document.getElementById('calendarGrid');
+    calendarGrid.innerHTML = '';
+    
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth() + 1;
+    const todayDay = today.getDate();
+    const todayStr = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
+    const currentMonthStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+    
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dateYear = date.getFullYear();
+      const dateMonth = date.getMonth() + 1;
+      const dateDay = date.getDate();
+      const dateString = `${dateYear}-${String(dateMonth).padStart(2, '0')}-${String(dateDay).padStart(2, '0')}`;
+      const isCurrentMonth = date.getMonth() === calendarMonth;
+      const isToday = dateString === todayStr;
+      const isFuture = date > today;
+      const hasCheckin = data.checkins.includes(dateString);
+      
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'aspect-square flex flex-col items-center justify-center relative group';
+      
+      if (!isCurrentMonth || isFuture) {
+        dayDiv.classList.add('text-on-surface-variant/40');
+      }
+      
+      if (isToday) {
+        dayDiv.innerHTML = `
+          <div class="absolute inset-1 bg-primary rounded-full shadow-lg shadow-primary/20"></div>
+          <span class="font-headline font-bold text-sm text-on-primary relative z-10">${date.getDate()}</span>
+          ${hasCheckin ? '<span class="material-symbols-outlined text-[10px] text-on-primary absolute bottom-1 z-10" style="font-variation-settings: \'FILL\' 1;">star</span>' : ''}
+        `;
+      } else {
+        dayDiv.innerHTML = `
+          <span class="font-body font-semibold text-sm">${date.getDate()}</span>
+          ${hasCheckin ? '<span class="material-symbols-outlined text-[10px] text-primary-container absolute bottom-1" style="font-variation-settings: \'FILL\' 1;">star</span>' : ''}
+        `;
+      }
+      
+      calendarGrid.appendChild(dayDiv);
+    }
+    
+    updateCalendarStats(currentMonthStr);
+  }
+
+  function updateCalendarStats(monthStr) {
+    document.getElementById('starsThisMonth').textContent = data.monthlyStars;
+    
+    const year = parseInt(monthStr.split('-')[0]);
+    const month = parseInt(monthStr.split('-')[1]) - 1;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const checkinsThisMonth = data.checkins.filter(d => d.startsWith(monthStr)).length;
+    const daysWithoutCheckin = daysInMonth - checkinsThisMonth;
+    document.getElementById('dayStreak').textContent = daysWithoutCheckin;
+  }
+
+  function checkGoalReached() {
+    const progressBar = document.getElementById('progressBar');
+    if (data.totalStars >= data.goal) {
+      progressBar.classList.add('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+      document.getElementById('congratulations-modal').style.display = 'flex';
+    } else {
+      progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+    }
+  }
+
+  document.getElementById('closeModalBtn').addEventListener('click', function() {
+    document.getElementById('congratulations-modal').style.display = 'none';
+    
+    const rewardNameEl = document.getElementById('rewardName');
+    if (data.reward === 'custom' && data.customReward) {
+      rewardNameEl.textContent = data.customReward;
+    } else if (data.reward) {
+      rewardNameEl.textContent = data.reward;
+    } else {
+      rewardNameEl.textContent = 'None';
+    }
+    document.getElementById('reward-claim-modal').style.display = 'flex';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    const progressBar = document.getElementById('progressBar');
+    data.totalStars = 0;
+    data.monthlyStars = 0;
+    data.lastMonth = new Date().getMonth();
+    data.checkins = [];
+    data.milestones.completed = [];
+    data.reward = '';
+    data.customReward = '';
+    saveData(data);
+    updateUI(data);
+    progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+    document.getElementById('congratulations-modal').style.display = 'none';
+  });
+
+  document.getElementById('collectRewardBtn').addEventListener('click', function() {
+    document.getElementById('reward-claim-modal').style.display = 'none';
+    
+    const progressBar = document.getElementById('progressBar');
+    data.totalStars = 0;
+    data.monthlyStars = 0;
+    data.lastMonth = new Date().getMonth();
+    data.checkins = [];
+    data.milestones.completed = [];
+    data.reward = '';
+    data.customReward = '';
+    saveData(data);
+    updateUI(data);
+    progressBar.classList.remove('shadow-[0_0_10px_rgba(254,170,0,0.5)]');
+  });
+
+  document.getElementById('settingsBtn').addEventListener('click', function() {
+    document.getElementById('goalInput').value = data.goal;
+    document.getElementById('rewardSelect').value = data.reward || '';
+    if (data.reward === 'custom') {
+      document.getElementById('customRewardInput').value = data.customReward || '';
+      document.getElementById('customRewardContainer').classList.remove('hidden');
+    } else {
+      document.getElementById('customRewardInput').value = '';
+      document.getElementById('customRewardContainer').classList.add('hidden');
+    }
+    document.getElementById('settings-modal').style.display = 'flex';
+  });
+
+  document.getElementById('settingsBackdrop').addEventListener('click', function() {
+    document.getElementById('settings-modal').style.display = 'none';
+  });
+
+  document.getElementById('cancelSettingsBtn').addEventListener('click', function() {
+    document.getElementById('settings-modal').style.display = 'none';
+  });
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', function() {
+    const newGoal = parseInt(document.getElementById('goalInput').value);
+    const deductAmount = parseInt(document.getElementById('deductInput').value) || 0;
+    const rewardSelect = document.getElementById('rewardSelect').value;
+    const customReward = document.getElementById('customRewardInput').value;
+
+    if (newGoal > 0) {
+      data.goal = newGoal;
+    }
+
+    if (deductAmount > 0) {
+      data.totalStars = Math.max(0, data.totalStars - deductAmount);
+      data.monthlyStars = Math.max(0, data.monthlyStars - deductAmount);
+      
+      let remaining = deductAmount;
+      while (remaining > 0 && data.checkins.length > 0) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+        const todayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const lastCheckin = data.checkins[data.checkins.length - 1];
+        
+        if (lastCheckin === todayStr) {
+          data.checkins.pop();
+          remaining--;
+        } else {
+          break;
+        }
+      }
+    }
+
+    if (rewardSelect) {
+      data.reward = rewardSelect;
+      if (rewardSelect === 'custom' && customReward) {
+        data.customReward = customReward;
+      }
+    }
+
+    saveData(data);
+    updateUI(data);
+    checkGoalReached();
+    document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('goalInput').value = '';
+    document.getElementById('deductInput').value = '';
+  });
+
+  document.getElementById('rewardSelect').addEventListener('change', function() {
+    const customContainer = document.getElementById('customRewardContainer');
+    if (this.value === 'custom') {
+      customContainer.classList.remove('hidden');
+    } else {
+      customContainer.classList.add('hidden');
+    }
+  });
+
+  document.getElementById('accountManagementCard').addEventListener('click', function(e) {
+    if (isLoggedIn) {
+      document.getElementById('settings-modal').style.display = 'none';
+      document.getElementById('accountNameInput').value = currentUsername || 'User';
+      document.getElementById('accountPhoneInput').value = '+1 (555) 0123-4567';
+      document.getElementById('account-modal').style.display = 'flex';
+    } else {
+      document.getElementById('settings-modal').style.display = 'none';
+      document.getElementById('login-modal').style.display = 'flex';
+    }
+  });
+
+  document.getElementById('closeAccountBtn').addEventListener('click', function() {
+    document.getElementById('account-modal').style.display = 'none';
+  });
+
+  document.getElementById('account-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.style.display = 'none';
+    }
+  });
+
+  document.getElementById('editAccountNameBtn').addEventListener('click', function() {
+    const accountNameInput = document.getElementById('accountNameInput');
+    if (accountNameInput.hasAttribute('readonly')) {
+      accountNameInput.removeAttribute('readonly');
+      accountNameInput.focus();
+      this.innerHTML = '<span class="material-symbols-outlined text-lg">check</span>';
+    } else {
+      accountNameInput.setAttribute('readonly', 'true');
+      currentUsername = accountNameInput.value;
+      localStorage.setItem('starCollectorUsername', currentUsername);
+      updateAccountUI();
+      this.innerHTML = '<span class="material-symbols-outlined text-lg">edit</span>';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function() {
+    isLoggedIn = false;
+    currentUsername = '';
+    localStorage.removeItem('starCollectorUsername');
+    updateAccountUI();
+    document.getElementById('account-modal').style.display = 'none';
+  });
+
+  document.getElementById('loginBackdrop').addEventListener('click', function() {
+    document.getElementById('login-modal').style.display = 'none';
+  });
+
+  document.getElementById('maybeLaterBtn').addEventListener('click', function() {
+    document.getElementById('login-modal').style.display = 'none';
+  });
+
+  let isLoginMode = true;
+
+  document.getElementById('loginBtn').addEventListener('click', function() {
+    isLoginMode = true;
+    updateLoginFormUI();
+    document.getElementById('login-modal').style.display = 'none';
+    document.getElementById('login-form-modal').style.display = 'flex';
+  });
+
+  document.getElementById('signupBtn').addEventListener('click', function() {
+    isLoginMode = false;
+    updateLoginFormUI();
+    document.getElementById('login-modal').style.display = 'none';
+    document.getElementById('login-form-modal').style.display = 'flex';
+  });
+
+  function updateLoginFormUI() {
+    if (isLoginMode) {
+      document.getElementById('loginFormTitle').textContent = 'Log In';
+      document.getElementById('submitBtnText').textContent = 'Log In';
+      document.getElementById('switchModeText').textContent = "Don't have an account?";
+      document.getElementById('switchModeBtn').textContent = 'Sign Up';
+    } else {
+      document.getElementById('loginFormTitle').textContent = 'Sign Up';
+      document.getElementById('submitBtnText').textContent = 'Sign Up';
+      document.getElementById('switchModeText').textContent = 'Already have an account?';
+      document.getElementById('switchModeBtn').textContent = 'Log In';
+    }
+  }
+
+  document.getElementById('switchModeBtn').addEventListener('click', function() {
+    isLoginMode = !isLoginMode;
+    updateLoginFormUI();
+  });
+
+  document.getElementById('closeLoginFormBtn').addEventListener('click', function() {
+    document.getElementById('login-form-modal').style.display = 'none';
+  });
+
+  document.getElementById('loginFormBackdrop').addEventListener('click', function() {
+    document.getElementById('login-form-modal').style.display = 'none';
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const existingUsers = JSON.parse(localStorage.getItem('starCollectorUsers') || '{}');
+
+    if (isLoginMode) {
+      // Login logic
+      if (existingUsers[username] && existingUsers[username] === password) {
+        isLoggedIn = true;
+        currentUsername = username;
+        localStorage.setItem('starCollectorUsername', currentUsername);
+        updateAccountUI();
+        document.getElementById('login-form-modal').style.display = 'none';
+      } else {
+        alert('Invalid username or password');
+      }
+    } else {
+      // Sign up logic
+      if (existingUsers[username]) {
+        alert('Username already exists');
+      } else {
+        existingUsers[username] = password;
+        localStorage.setItem('starCollectorUsers', JSON.stringify(existingUsers));
+        isLoggedIn = true;
+        currentUsername = username;
+        localStorage.setItem('starCollectorUsername', currentUsername);
+        updateAccountUI();
+        document.getElementById('login-form-modal').style.display = 'none';
+      }
+    }
+  });
+
+  const savedUsername = localStorage.getItem('starCollectorUsername');
+  if (savedUsername) {
+    isLoggedIn = true;
+    currentUsername = savedUsername;
+    updateAccountUI();
+  }
+})();
+</script>
+</body>
+</html>
